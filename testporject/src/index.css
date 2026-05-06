@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.bpf-stage {
+    clip-path: polygon(0% 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 0% 100%, 14px 50%);
+}
+.bpf-stage:first-child {
+    clip-path: polygon(0% 0%, calc(100% - 14px) 0%, 100% 50%, calc(100% - 14px) 100%, 0% 100%);
+}
+.bpf-stage:last-child {
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 14px 50%);
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+}
+
+/* Hide scrollbar for elements with no-scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+@keyframes progress {
+  from { background-position: 20px 0; }
+  to { background-position: 0 0; }
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  header, nav, .h-11, .h-10, button, input[type="file"], .confirmation-dialog, .alert-dialog { display: none !important; }
+  main { margin: 0 !important; border: none !important; overflow: visible !important; }
+  .print-page { page-break-after: always; padding: 20px; border: 1px solid #eee; margin-bottom: 20px; }
+  .print-page:last-child { page-break-after: auto; }
+}
+.print-only { display: none; }
