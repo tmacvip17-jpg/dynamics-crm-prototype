@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { opportunitiesApi } from "../lib/api";
 import type { Opportunity } from "../lib/types";
+import CustomSelect from "./shared/CustomSelect";
 
 interface ParsedResult {
   id: string;
@@ -202,14 +203,14 @@ Expected output format:
             <div className="p-5 flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[12px] font-medium text-slate-700">Provider Type</label>
-                <select 
-                  value={apiConfig.providerType}
-                  onChange={e => setApiConfig({...apiConfig, providerType: e.target.value as 'openai' | 'azure'})}
-                  className="border border-slate-300 rounded px-3 py-1.5 text-[13px] outline-none focus:border-[#0072c6] bg-white"
-                >
-                  <option value="openai">Standard OpenAI Compatible (OpenAI, DeepSeek, etc.)</option>
-                  <option value="azure">Azure OpenAI</option>
-                </select>
+                <div className="relative border-b border-slate-200 focus-within:border-[#0072c6]">
+                  <CustomSelect 
+                    value={apiConfig.providerType}
+                    onChange={v => setApiConfig({...apiConfig, providerType: v as 'openai' | 'azure'})}
+                    options={['openai', 'azure']}
+                    displayValue={apiConfig.providerType === 'openai' ? 'OpenAI Compatible' : 'Azure OpenAI'}
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[12px] font-medium text-slate-700">
@@ -281,18 +282,14 @@ Expected output format:
           <p className="text-[13px] text-slate-500">Extract OES, Vehicle Model, and OEM from opportunities using a real LLM.</p>
         </div>
         <div className="mt-4 md:mt-0 flex items-center gap-3">
-          <select 
-            value={analyzeLimit} 
-            onChange={(e) => setAnalyzeLimit(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            disabled={analyzing}
-            className="border border-slate-300 rounded px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-[#8a2be2] bg-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <option value={5}>Test 5 Items</option>
-            <option value={10}>Test 10 Items</option>
-            <option value={50}>Process 50 Items</option>
-            <option value={100}>Process 100 Items</option>
-            <option value="all">Process All ({opportunities.length})</option>
-          </select>
+          <div className="w-48">
+            <CustomSelect 
+              value={analyzeLimit === 'all' ? 'all' : String(analyzeLimit)} 
+              onChange={(v) => setAnalyzeLimit(v === 'all' ? 'all' : Number(v))}
+              options={['5', '10', '50', '100', 'all']}
+              displayValue={analyzeLimit === 'all' ? `Process All (${opportunities.length})` : `Process ${analyzeLimit} Items`}
+            />
+          </div>
 
           <button 
             onClick={() => setShowConfig(true)}

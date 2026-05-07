@@ -3,8 +3,9 @@ import ConfirmationDialog from './ConfirmationDialog';
 import AlertDialog from './AlertDialog';
 import { opportunitiesApi, timelineApi } from '../lib/api';
 import type { Opportunity, TimelineEntry } from '../lib/types';
+import CustomSelect from './shared/CustomSelect';
 
-export default function OpportunityDetail({ id, onSave, onBack }: { id: string | null; onSave: () => void; onBack: () => void }) {
+export default function OpportunityDetail({ id, profile, onSave, onBack }: { id: string | null; profile: any; onSave: () => void; onBack: () => void }) {
     const [activeTab, setActiveTab] = useState('info');
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showAlertDialog, setShowAlertDialog] = useState(false);
@@ -12,7 +13,11 @@ export default function OpportunityDetail({ id, onSave, onBack }: { id: string |
     const [alertTitle, setAlertTitle] = useState('Information');
     const [loading, setLoading] = useState(!!id);
     const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
-    const [form, setForm] = useState<Partial<Opportunity>>({ topic: '', opportunity_code: '', sales_group: '', application: '', business_unit: '', est_revenue: 0, currency: 'USD' });
+    const [form, setForm] = useState<Partial<Opportunity>>({ 
+        topic: '', opportunity_code: '', sales_group: '', application: '', 
+        business_unit: '', est_revenue: 0, currency: 'USD',
+        owner: profile?.full_name || 'System User'
+    });
 
     useEffect(() => {
         if (id) {
@@ -26,7 +31,13 @@ export default function OpportunityDetail({ id, onSave, onBack }: { id: string |
 
     const handleCommand = async (action: string) => {
         if (action === 'Save') {
-            try { if (id) await opportunitiesApi.update(id, form); else await opportunitiesApi.create(form); onSave(); } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); }
+            try { 
+                const payload = { ...form };
+                if (!id && (!form.owner || form.owner === 'System User')) {
+                    payload.owner = profile?.full_name || 'System User';
+                }
+                if (id) await opportunitiesApi.update(id, payload); else await opportunitiesApi.create(payload); onSave(); 
+            } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); }
         } else if (action === 'Delete') { if (id) setShowConfirmDialog(true); else { setAlertTitle('Info'); setAlertMessage('Record not yet saved.'); setShowAlertDialog(true); }
         } else { setAlertTitle('Action Failed'); setAlertMessage(`Action "${action}" is not fully implemented yet.`); setShowAlertDialog(true); }
     };
@@ -51,18 +62,18 @@ export default function OpportunityDetail({ id, onSave, onBack }: { id: string |
                     <TabBtn label="Opportunity Information" active={activeTab === 'info'} onClick={() => setActiveTab('info')} />
                     <TabBtn label="Timeline" active={activeTab === 'timeline'} onClick={() => setActiveTab('timeline')} />
                 </div>
-                <div className="max-w-4xl">
+                <div className="max-w-none">
                     {activeTab === 'info' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                             <FmField label="Opportunity Code" value={form.opportunity_code || ''} onChange={v => updateField('opportunity_code', v)} />
                             <FmField label="Topic *" value={form.topic || ''} onChange={v => updateField('topic', v)} />
-                            <FmField label="SalesGroup" value={form.sales_group || ''} onChange={v => updateField('sales_group', v)} />
+                            <FmField label="SalesGroup" value={form.sales_group || ''} isSelect options={['Group A', 'Group B', 'Group C']} onChange={v => updateField('sales_group', v)} />
                             <FmField label="application" value={form.application || ''} onChange={v => updateField('application', v)} />
-                            <FmField label="BusinessUnit" value={form.business_unit || ''} onChange={v => updateField('business_unit', v)} />
+                            <FmField label="BusinessUnit" value={form.business_unit || ''} isSelect options={['Unit 1', 'Unit 2', 'Unit 3']} onChange={v => updateField('business_unit', v)} />
                             <FmField label="OpportunityStartTime" value={form.opportunity_start_time || ''} onChange={v => updateField('opportunity_start_time', v)} type="date" />
                             <FmField label="OpportunityFinishtime" value={form.opportunity_finish_time || ''} onChange={v => updateField('opportunity_finish_time', v)} type="date" />
                             <FmField label="Est. Revenue" value={String(form.est_revenue || 0)} onChange={v => updateField('est_revenue', parseFloat(v) || 0)} type="number" icon="payments" />
-                            <FmField label="Currency" value={form.currency || ''} onChange={v => updateField('currency', v)} />
+                            <FmField label="Currency" value={form.currency || 'USD'} isSelect options={['USD', 'EUR', 'CNY', 'JPY']} onChange={v => updateField('currency', v)} />
                         </div>
                     )}
                     {activeTab === 'timeline' && (
@@ -143,5 +154,5 @@ function LookupField({ label, value, options, onSelect, icon }: { label: string;
 function CmdBtn({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) { return (<button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-slate-100 text-slate-700 text-[13px] rounded transition-colors whitespace-nowrap"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span><span className="hidden sm:inline">{label}</span></button>); }
 function HdrField({ label, value }: { label: string; value: string }) { return (<div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">{label}</span><span className="text-[13px] text-slate-900">{value}</span></div>); }
 function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) { return (<button onClick={onClick} className={`whitespace-nowrap text-[11px] font-bold uppercase tracking-wider pb-2 relative ${active ? 'text-slate-800 border-b-[3px] border-[#0072c6] mb-[-2px]' : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'}`}>{label}</button>); }
-function FmField({ label, value, icon, onChange, type = "text" }: { label: string; value: string; icon?: string; onChange?: (v: string) => void; type?: string }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}<input type={type} value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" /></div></div>); }
+function FmField({ label, value, icon, onChange, type = "text", isSelect, options }: { label: string; value: string; icon?: string; onChange?: (v: string) => void; type?: string; isSelect?: boolean; options?: string[] }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}{isSelect ? <CustomSelect value={value} onChange={onChange||(()=>{})} options={options||[]} /> : <input type={type} value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" />}</div></div>); }
 function TlItem({ icon, title, time, desc, tags }: { key?: React.Key; icon: string; title: string; time: string; desc: string; tags?: string[] }) { return (<div className="flex gap-3"><div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span></div><div className="flex-1 border border-slate-200 rounded p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white"><div className="flex justify-between items-start mb-1"><div className="text-[13px] font-semibold text-slate-900">{title}</div><div className="text-[11px] text-slate-500">{time}</div></div><p className="text-[13px] text-slate-600 leading-relaxed mb-2 line-clamp-2">{desc}</p>{tags && <div className="flex gap-2">{tags.map(t => <span key={t} className={`px-2 py-0.5 text-[11px] font-medium rounded ${t === 'Completed' ? 'bg-green-100/50 text-green-700' : 'bg-slate-100 text-slate-700'}`}>{t}</span>)}</div>}</div></div>); }

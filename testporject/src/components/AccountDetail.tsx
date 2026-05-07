@@ -3,8 +3,9 @@ import ConfirmationDialog from './ConfirmationDialog';
 import AlertDialog from './AlertDialog';
 import { accountsApi, timelineApi } from '../lib/api';
 import type { Account, TimelineEntry } from '../lib/types';
+import CustomSelect from './shared/CustomSelect';
 
-export default function AccountDetail({ id, onSave, onBack }: { id: string | null; onSave: () => void; onBack: () => void }) {
+export default function AccountDetail({ id, profile, onSave, onBack }: { id: string | null; profile: any; onSave: () => void; onBack: () => void }) {
     const [activeTab, setActiveTab] = useState('info');
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showAlertDialog, setShowAlertDialog] = useState(false);
@@ -12,7 +13,13 @@ export default function AccountDetail({ id, onSave, onBack }: { id: string | nul
     const [alertTitle, setAlertTitle] = useState('Information');
     const [loading, setLoading] = useState(!!id);
     const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
-    const [form, setForm] = useState<Partial<Account>>({ name: '', phone: '', fax: '', website: '', parent_account: '', ticker_symbol: '', street: '', city: '', state: '', zip: '', country: '', annual_revenue: 0, employees: 0, owner: 'Alex Wu', primary_contact: '', email: '' });
+    const [form, setForm] = useState<Partial<Account>>({ 
+        name: '', phone: '', fax: '', website: '', parent_account: '', 
+        ticker_symbol: '', street: '', city: '', state: '', zip: '', 
+        country: '', annual_revenue: 0, employees: 0, 
+        owner: profile?.full_name || 'System User', 
+        primary_contact: '', email: '' 
+    });
 
     useEffect(() => {
         if (id) {
@@ -22,12 +29,23 @@ export default function AccountDetail({ id, onSave, onBack }: { id: string | nul
         }
     }, [id]);
 
+    const getInitials = (name: string) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
+
     const updateField = (field: string, value: any) => setForm(prev => ({ ...prev, [field]: value }));
 
     const handleCommand = async (action: string) => {
         if (action === 'Save') {
             try {
-                if (id) await accountsApi.update(id, form); else await accountsApi.create(form);
+                const payload = { ...form };
+                // Ensure owner is set to profile's full_name if creating new and owner is the default
+                if (!id && (!form.owner || form.owner === 'System User')) {
+                    payload.owner = profile?.full_name || 'System User';
+                }
+                
+                if (id) await accountsApi.update(id, payload); else await accountsApi.create(payload);
                 onSave();
             } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); }
         } else if (action === 'Delete') {
@@ -59,14 +77,14 @@ export default function AccountDetail({ id, onSave, onBack }: { id: string | nul
                     <div className="flex flex-wrap gap-8 pb-[8px]">
                         <HdrField label="Annual Revenue" value={`$${(form.annual_revenue || 0).toLocaleString('en-US', {minimumFractionDigits:2})}`} />
                         <HdrField label="No. of Employees" value={String(form.employees || 0)} />
-                        <div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Owner</span><div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded-full bg-blue-100 text-[#005a9e] flex items-center justify-center text-[10px] font-bold">AW</div><span className="text-[13px] text-slate-900">{form.owner}</span></div></div>
+                        <div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Owner</span><div className="flex items-center gap-1.5"><div className="w-5 h-5 rounded-full bg-blue-100 text-[#005a9e] flex items-center justify-center text-[10px] font-bold">{getInitials(form.owner || '')}</div><span className="text-[13px] text-slate-900">{form.owner}</span></div></div>
                     </div>
                 </div>
                 <div className="flex px-1 mb-6 gap-8 overflow-x-auto no-scrollbar">
                     <TabBtn label="Account Information" active={activeTab === 'info'} onClick={() => setActiveTab('info')} />
                     <TabBtn label="Timeline" active={activeTab === 'timeline'} onClick={() => setActiveTab('timeline')} />
                 </div>
-                <div className="max-w-4xl">
+                <div className="max-w-none">
                     {activeTab === 'info' && (
                         <div className="flex flex-col">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
@@ -111,5 +129,5 @@ export default function AccountDetail({ id, onSave, onBack }: { id: string | nul
 function CmdBtn({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) { return (<button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-slate-100 text-slate-700 text-[13px] rounded transition-colors whitespace-nowrap"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span><span className="hidden sm:inline">{label}</span></button>); }
 function HdrField({ label, value }: { label: string; value: string }) { return (<div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">{label}</span><span className="text-[13px] text-slate-900">{value}</span></div>); }
 function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) { return (<button onClick={onClick} className={`whitespace-nowrap text-[11px] font-bold uppercase tracking-wider pb-2 relative ${active ? 'text-slate-800 border-b-[3px] border-[#0072c6] mb-[-2px]' : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'}`}>{label}</button>); }
-function FmField({ label, value, icon, onChange }: { label: string; value: string; icon?: string; onChange?: (v: string) => void }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}<input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" /></div></div>); }
+function FmField({ label, value, icon, onChange, isSelect, options }: { label: string; value: string; icon?: string; onChange?: (v: string) => void; isSelect?: boolean; options?: string[] }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}{isSelect ? <CustomSelect value={value} onChange={onChange||(()=>{})} options={options||[]} /> : <input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" />}</div></div>); }
 function TlItem({ icon, title, time, desc, tags }: { key?: React.Key; icon: string; title: string; time: string; desc: string; tags?: string[] }) { return (<div className="flex gap-3"><div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0 mt-0.5"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span></div><div className="flex-1 border border-slate-200 rounded p-3 shadow-[0_1px_2px_rgba(0,0,0,0.05)] bg-white"><div className="flex justify-between items-start mb-1"><div className="text-[13px] font-semibold text-slate-900">{title}</div><div className="text-[11px] text-slate-500">{time}</div></div><p className="text-[13px] text-slate-600 leading-relaxed mb-2 line-clamp-2">{desc}</p>{tags && <div className="flex gap-2">{tags.map(t => <span key={t} className={`px-2 py-0.5 text-[11px] font-medium rounded ${t === 'Completed' ? 'bg-green-100/50 text-green-700' : 'bg-slate-100 text-slate-700'}`}>{t}</span>)}</div>}</div></div>); }

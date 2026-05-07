@@ -11,6 +11,7 @@ import type {
   Activity, ActivityInput,
   TimelineEntry, TimelineEntryInput,
   ProjectApplication, ProjectApplicationInput,
+  ProjectPlan, ProjectPlanInput,
   DashboardData,
 } from './types';
 
@@ -626,6 +627,68 @@ export const projectVehicleModelsApi = {
 };
 
 // ============================================
+// PROJECT PLANS
+// ============================================
+export const projectPlansApi = {
+  async list(): Promise<ProjectPlan[]> {
+    const { data, error } = await supabase
+      .from('project_plans')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getById(id: string): Promise<ProjectPlan | null> {
+    const { data, error } = await supabase
+      .from('project_plans')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async create(plan: ProjectPlanInput): Promise<ProjectPlan> {
+    const { data, error } = await supabase
+      .from('project_plans')
+      .insert(plan)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async createMany(plans: ProjectPlanInput[]): Promise<ProjectPlan[]> {
+    const { data, error } = await supabase
+      .from('project_plans')
+      .insert(plans)
+      .select();
+    if (error) throw error;
+    return data || [];
+  },
+
+  async update(id: string, plan: ProjectPlanInput): Promise<ProjectPlan> {
+    const { data, error } = await supabase
+      .from('project_plans')
+      .update(plan)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(ids: string[]): Promise<void> {
+    const { error } = await supabase
+      .from('project_plans')
+      .delete()
+      .in('id', ids);
+    if (error) throw error;
+  }
+};
+
+// ============================================
 // DASHBOARD DATA
 // ============================================
 export const dashboardApi = {
@@ -666,10 +729,45 @@ export const dashboardApi = {
     const { count: totalOpportunities } = await supabase.from('opportunities').select('*', { count: 'exact', head: true });
     const { count: totalLeads } = await supabase.from('leads').select('*', { count: 'exact', head: true });
 
+    // Project tasks by owner
+    const { data: plans } = await supabase.from('project_plans').select('m0_tasks, m1_tasks, m2_tasks, m3_tasks, m4_tasks');
+    const ownerTaskMap: Record<string, { name: string; 'Not Started': number; 'In Progress': number; 'Completed': number; 'Delayed': number }> = {};
+
+    (plans || []).forEach(plan => {
+      const allTasks = [
+        ...(plan.m0_tasks || []),
+        ...(plan.m1_tasks || []),
+        ...(plan.m2_tasks || []),
+        ...(plan.m3_tasks || []),
+        ...(plan.m4_tasks || [])
+      ];
+
+      allTasks.forEach(task => {
+        const owner = task.owner || 'Unassigned';
+        if (!ownerTaskMap[owner]) {
+          ownerTaskMap[owner] = {
+            name: owner,
+            'Not Started': 0,
+            'In Progress': 0,
+            'Completed': 0,
+            'Delayed': 0
+          };
+        }
+        
+        if (task.status === 'Not Started') ownerTaskMap[owner]['Not Started']++;
+        else if (task.status === 'In Progress') ownerTaskMap[owner]['In Progress']++;
+        else if (task.status === 'Completed') ownerTaskMap[owner]['Completed']++;
+        else if (task.status === 'Delayed') ownerTaskMap[owner]['Delayed']++;
+      });
+    });
+
+    const projectTasksData = Object.values(ownerTaskMap);
+
     return {
       pipelineData,
       revenueData,
       winLossData,
+      projectTasksData,
       totalAccounts: totalAccounts || 0,
       totalContacts: totalContacts || 0,
       totalOpportunities: totalOpportunities || 0,

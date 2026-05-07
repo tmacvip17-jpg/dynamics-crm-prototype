@@ -3,20 +3,41 @@ import AlertDialog from './AlertDialog';
 import ConfirmationDialog from './ConfirmationDialog';
 import { activitiesApi } from '../lib/api';
 import type { Activity } from '../lib/types';
+import CustomSelect from './shared/CustomSelect';
 
-export default function ActivityDetail({ id, onSave, onBack }: { id: string | null; onSave: () => void; onBack: () => void }) {
+export default function ActivityDetail({ id, profile, onSave, onBack }: { id: string | null; profile: any; onSave: () => void; onBack: () => void }) {
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showAlertDialog, setShowAlertDialog] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
     const [alertTitle, setAlertTitle] = useState('Information');
     const [loading, setLoading] = useState(!!id);
-    const [form, setForm] = useState<Partial<Activity>>({ subject: '', activity_type: 'Task', regarding: '', priority: 'Normal', status: 'Open', due_date: '', description: '', assignee: 'Alex Wu', owner: 'Alex Wu' });
+    const [form, setForm] = useState<Partial<Activity>>({ 
+        subject: '', activity_type: 'Task', regarding: '', priority: 'Normal', 
+        status: 'Open', due_date: '', description: '', 
+        assignee: profile?.full_name || 'System User', 
+        owner: profile?.full_name || 'System User' 
+    });
 
     useEffect(() => { if (id) { setLoading(true); activitiesApi.getById(id).then(d => { if (d) setForm(d); setLoading(false); }).catch(() => setLoading(false)); } }, [id]);
+    
+    const getInitials = (name: string) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
+
     const updateField = (f: string, v: any) => setForm(p => ({ ...p, [f]: v }));
 
     const handleCommand = async (action: string) => {
-        if (action === 'Save & Close' || action === 'Save') { try { if (id) await activitiesApi.update(id, form); else await activitiesApi.create(form); onSave(); } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); } }
+        if (action === 'Save & Close' || action === 'Save') { 
+            try { 
+                const payload = { ...form };
+                if (!id && (!form.owner || form.owner === 'System User')) {
+                    payload.owner = profile?.full_name || 'System User';
+                    payload.assignee = profile?.full_name || 'System User';
+                }
+                if (id) await activitiesApi.update(id, payload); else await activitiesApi.create(payload); onSave(); 
+            } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); } 
+        }
         else if (action === 'Delete') { if (id) setShowConfirmDialog(true); }
         else { setAlertTitle('Action Failed'); setAlertMessage(`"${action}" not implemented yet.`); setShowAlertDialog(true); }
     };
@@ -46,32 +67,18 @@ export default function ActivityDetail({ id, onSave, onBack }: { id: string | nu
                         <div className="flex flex-col">
                             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Owner</span>
                             <div className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full bg-blue-100 text-[#005a9e] flex items-center justify-center text-[10px] font-bold">AW</div>
+                                <div className="w-5 h-5 rounded-full bg-blue-100 text-[#005a9e] flex items-center justify-center text-[10px] font-bold">{getInitials(form.owner || '')}</div>
                                 <span className="text-[13px] text-slate-900">{form.owner}</span>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div className="max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
+                <div className="max-w-none grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                     <Ff label="Subject *" value={form.subject||''} onChange={v=>updateField('subject',v)} />
                     <Ff label="Regarding" value={form.regarding||''} onChange={v=>updateField('regarding',v)} icon="computer" />
-                    <div className="flex flex-row items-center group py-1.5">
-                        <label className="text-[12px] text-slate-500 w-32 shrink-0">Priority</label>
-                        <div className="flex-1 border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] transition-colors relative">
-                            <select value={form.priority||'Normal'} onChange={e=>updateField('priority',e.target.value)} className="bg-transparent py-1 text-[13px] text-slate-900 outline-none w-full appearance-none">
-                                <option>High</option><option>Normal</option><option>Low</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="flex flex-row items-center group py-1.5">
-                        <label className="text-[12px] text-slate-500 w-32 shrink-0">Task Status</label>
-                        <div className="flex-1 border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] transition-colors relative">
-                            <select value={form.status||'Open'} onChange={e=>updateField('status',e.target.value)} className="bg-transparent py-1 text-[13px] text-slate-900 outline-none w-full appearance-none">
-                                <option>Open</option><option>Completed</option><option>Canceled</option>
-                            </select>
-                        </div>
-                    </div>
+                    <Ff label="Priority" value={form.priority||'Normal'} isSelect options={['High', 'Normal', 'Low']} onChange={v=>updateField('priority',v)} />
+                    <Ff label="Task Status" value={form.status||'Open'} isSelect options={['Open', 'Completed', 'Canceled']} onChange={v=>updateField('status',v)} />
                     <Ff label="Due Date" value={form.due_date||''} onChange={v=>updateField('due_date',v)} type="date" />
                     <Ff label="Assignee" value={form.assignee||''} onChange={v=>updateField('assignee',v)} icon="person" />
                     <div className="col-span-1 md:col-span-2 lg:col-span-3 flex flex-row items-start group mt-4">
@@ -91,4 +98,4 @@ export default function ActivityDetail({ id, onSave, onBack }: { id: string | nu
 }
 function Cb({icon,label,onClick}:{icon:string;label:string;onClick?:()=>void}){return(<button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-slate-100 text-slate-700 text-[13px] rounded transition-colors whitespace-nowrap"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span>{label}</button>);}
 function HdrField({ label, value }: { label: string; value: string }) { return (<div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">{label}</span><span className="text-[13px] text-slate-900">{value}</span></div>); }
-function Ff({label,value,icon,onChange,type="text"}:{label:string;value:string;icon?:string;onChange?:(v:string)=>void;type?:string}){return(<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*')?<>{label.replace(' *','')}<span className="text-red-600"> *</span></>:label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon&&<span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}<input type={type} value={value} onChange={e=>onChange?.(e.target.value)} className={`w-full bg-transparent text-[13px] outline-none ${icon?'text-[#0072c6] cursor-pointer hover:underline':'text-slate-900'}`}/></div></div>);}
+function Ff({label,value,icon,onChange,type="text",isSelect,options}:{label:string;value:string;icon?:string;onChange?:(v:string)=>void;type?:string;isSelect?:boolean;options?:string[]}){return(<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*')?<>{label.replace(' *','')}<span className="text-red-600"> *</span></>:label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon&&<span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}{isSelect?(<CustomSelect value={value} onChange={onChange||(()=>{})} options={options||[]}/>):(<input type={type} value={value} onChange={e=>onChange?.(e.target.value)} className={`w-full bg-transparent text-[13px] outline-none ${icon?'text-[#0072c6] cursor-pointer hover:underline':'text-slate-900'}`}/>)}</div></div>);}

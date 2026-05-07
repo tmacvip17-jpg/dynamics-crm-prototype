@@ -3,6 +3,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 import AlertDialog from './AlertDialog';
 import { oemsApi, timelineApi } from '../lib/api';
 import type { OEM, OEMInput, TimelineEntry } from '../lib/types';
+import CustomSelect from './shared/CustomSelect';
 
 export default function OEMDetail({ id, onSave, onBack }: { id: string | null; onSave: () => void; onBack: () => void }) {
     const [activeTab, setActiveTab] = useState('info');
@@ -85,7 +86,7 @@ export default function OEMDetail({ id, onSave, onBack }: { id: string | null; o
                     <TabBtn label="General" active={activeTab === 'info'} onClick={() => setActiveTab('info')} />
                     <TabBtn label="Timeline" active={activeTab === 'timeline'} onClick={() => setActiveTab('timeline')} />
                 </div>
-                <div className="max-w-4xl">
+                <div className="max-w-none">
                     {activeTab === 'info' && (
                         <div className="flex flex-col">
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
@@ -97,7 +98,8 @@ export default function OEMDetail({ id, onSave, onBack }: { id: string | null; o
                                 <FmField label="Application Coverage" value={form.application_coverage || ''} onChange={v => updateField('application_coverage', v)} />
                                 <FmField label="First Data Source" value={form.first_data_source || ''} onChange={v => updateField('first_data_source', v)} />
                                 <FmField label="Data Source List" value={form.data_source_list || ''} onChange={v => updateField('data_source_list', v)} />
-                                <FmField label="Mod Status" value={form.data_mod_status || ''} onChange={v => updateField('data_mod_status', v)} />
+                                <FmField label="Mod Status" value={form.data_mod_status || ''} isSelect options={['Original', 'Modified', 'Deprecated']} onChange={v => updateField('data_mod_status', v)} />
+                                <FmField label="Status" value={form.status || 'Active'} isSelect options={['Active', 'Inactive']} onChange={v => updateField('status', v as any)} />
                                 <FmField label="Owner" value={form.owner || ''} onChange={v => updateField('owner', v)} icon="person" />
                             </div>
                         </div>
@@ -132,4 +134,4 @@ export default function OEMDetail({ id, onSave, onBack }: { id: string | null; o
 function CmdBtn({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) { return (<button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-slate-100 text-slate-700 text-[13px] rounded transition-colors whitespace-nowrap"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span><span className="hidden sm:inline">{label}</span></button>); }
 function HdrField({ label, value }: { label: string; value: string }) { return (<div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">{label}</span><span className="text-[13px] text-slate-900">{value}</span></div>); }
 function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) { return (<button onClick={onClick} className={`whitespace-nowrap text-[11px] font-bold uppercase tracking-wider pb-2 relative ${active ? 'text-slate-800 border-b-[3px] border-[#0072c6] mb-[-2px]' : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'}`}>{label}</button>); }
-function FmField({ label, value, icon, onChange }: { label: string; value: string; icon?: string; onChange?: (v: string) => void }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}<input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" /></div></div>); }
+function FmField({ label, value, icon, onChange, isSelect, options }: { label: string; value: string; icon?: string; onChange?: (v: string) => void; isSelect?: boolean; options?: string[] }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}{isSelect ? <CustomSelect value={value} onChange={onChange||(()=>{})} options={options||[]} /> : <input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" />}</div></div>); }

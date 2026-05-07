@@ -77,3 +77,48 @@ INSERT INTO timeline_entries (entity_type, entity_id, entry_type, icon, title, d
 ('lead', 'l0000001-0000-0000-0000-000000000001', 'post', 'description', 'Web Form Submitted', 'Downloaded ''Guide to Hybrid Cloud Migration'' whitepaper.', ARRAY['System']),
 -- Competitor: Trey Research
 ('competitor', 'x0000001-0000-0000-0000-000000000001', 'note', 'note', 'Analysis updated', 'Updated competitive analysis matrix based on their latest product announcement.', NULL);
+-- ============================================
+-- PROJECT PLANS
+-- ============================================
+CREATE TABLE IF NOT EXISTS project_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  status TEXT DEFAULT 'Draft',
+  team_members JSONB DEFAULT '[]',
+  m0_start DATE, m0_end DATE, m0_tasks JSONB DEFAULT '[]',
+  m1_start DATE, m1_end DATE, m1_tasks JSONB DEFAULT '[]',
+  m2_start DATE, m2_end DATE, m2_tasks JSONB DEFAULT '[]',
+  m3_start DATE, m3_end DATE, m3_tasks JSONB DEFAULT '[]',
+  m4_start DATE, m4_end DATE, m4_tasks JSONB DEFAULT '[]',
+  owner TEXT DEFAULT 'Admin',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE project_plans ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Enable read access for all users" ON project_plans FOR SELECT USING (true);
+CREATE POLICY "Enable insert for all users" ON project_plans FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update for all users" ON project_plans FOR UPDATE USING (true);
+CREATE POLICY "Enable delete for all users" ON project_plans FOR DELETE USING (true);
+
+-- Updated at trigger
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_project_plans_updated_at
+    BEFORE UPDATE ON project_plans
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();
+
+INSERT INTO project_plans (name, status, team_members, m0_start, m0_end, m0_tasks, m1_start, m1_end) VALUES
+('ERP Migration 2024', 'Active', '[{"name": "Alex Wu", "role": "PM", "responsibility": "Overall coordination"}, {"name": "Sarah Chen", "role": "Dev", "responsibility": "Backend API"}]', '2024-01-01', '2024-01-15', '[{"task": "Kickoff meeting", "owner": "Alex Wu", "due_date": "2024-01-05", "status": "Completed"}]', '2024-01-16', '2024-02-28'),
+('Cloud Security Audit', 'Draft', '[]', '2024-03-01', '2024-03-10', '[{"task": "Compliance review", "owner": "Q", "due_date": "2024-03-05", "status": "In Progress"}]', NULL, NULL);
+

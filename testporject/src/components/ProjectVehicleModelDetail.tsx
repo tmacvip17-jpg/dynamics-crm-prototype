@@ -3,6 +3,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 import AlertDialog from './AlertDialog';
 import { projectVehicleModelsApi, timelineApi } from '../lib/api';
 import type { ProjectVehicleModel, ProjectVehicleModelInput, TimelineEntry } from '../lib/types';
+import CustomSelect from './shared/CustomSelect';
 
 export default function ProjectVehicleModelDetail({ id, onSave, onBack }: { id: string | null; onSave: () => void; onBack: () => void }) {
     const [activeTab, setActiveTab] = useState('info');
@@ -97,7 +98,7 @@ export default function ProjectVehicleModelDetail({ id, onSave, onBack }: { id: 
                     <TabBtn label="OEM Details" active={activeTab === 'oem'} onClick={() => setActiveTab('oem')} />
                     <TabBtn label="Timeline" active={activeTab === 'timeline'} onClick={() => setActiveTab('timeline')} />
                 </div>
-                <div className="max-w-5xl">
+                <div className="max-w-none">
                     {activeTab === 'info' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                             <FmField label="Name *" value={form.name || ''} onChange={v => updateField('name', v)} />
@@ -107,11 +108,12 @@ export default function ProjectVehicleModelDetail({ id, onSave, onBack }: { id: 
                             <FmField label="External Code" value={form.external_code || ''} onChange={v => updateField('external_code', v)} />
                             <FmField label="In/Out Code" value={form.in_out_code || ''} onChange={v => updateField('in_out_code', v)} />
                             <FmField label="Brand" value={form.brand || ''} onChange={v => updateField('brand', v)} />
-                            <FmField label="Body Type" value={form.body_type || ''} onChange={v => updateField('body_type', v)} />
-                            <FmField label="Energy Type" value={form.energy_type || ''} onChange={v => updateField('energy_type', v)} />
+                            <FmField label="Body Type" value={form.body_type || ''} isSelect options={['Sedan', 'SUV', 'MPV', 'Hatchback', 'Coupe']} onChange={v => updateField('body_type', v)} />
+                            <FmField label="Energy Type" value={form.energy_type || ''} isSelect options={['ICE', 'BEV', 'PHEV', 'HEV', 'FCEV']} onChange={v => updateField('energy_type', v)} />
                             <FmField label="SOP" value={form.sop || ''} onChange={v => updateField('sop', v)} />
                             <FmField label="EOP" value={form.eop || ''} onChange={v => updateField('eop', v)} />
-                            <FmField label="Match Prod/Sales" value={form.matches_prod_sales || ''} onChange={v => updateField('matches_prod_sales', v)} />
+                            <FmField label="Match Prod/Sales" value={form.matches_prod_sales || ''} isSelect options={['Yes', 'No']} onChange={v => updateField('matches_prod_sales', v as any)} />
+                            <FmField label="Status" value={form.status || 'Active'} isSelect options={['Active', 'Inactive']} onChange={v => updateField('status', v as any)} />
                         </div>
                     )}
                     {activeTab === 'oem' && (
@@ -138,4 +140,4 @@ export default function ProjectVehicleModelDetail({ id, onSave, onBack }: { id: 
 function CmdBtn({ icon, label, onClick }: { icon: string; label: string; onClick?: () => void }) { return (<button onClick={onClick} className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-slate-100 text-slate-700 text-[13px] rounded transition-colors whitespace-nowrap"><span className="material-symbols-outlined text-[16px] text-slate-500">{icon}</span><span className="hidden sm:inline">{label}</span></button>); }
 function HdrField({ label, value }: { label: string; value: string }) { return (<div className="flex flex-col"><span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">{label}</span><span className="text-[13px] text-slate-900">{value}</span></div>); }
 function TabBtn({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) { return (<button onClick={onClick} className={`whitespace-nowrap text-[11px] font-bold uppercase tracking-wider pb-2 relative ${active ? 'text-slate-800 border-b-[3px] border-[#0072c6] mb-[-2px]' : 'text-slate-500 border-b-[3px] border-transparent hover:text-slate-700'}`}>{label}</button>); }
-function FmField({ label, value, icon, onChange }: { label: string; value: string; icon?: string; onChange?: (v: string) => void }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}<input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" /></div></div>); }
+function FmField({ label, value, icon, onChange, isSelect, options }: { label: string; value: string; icon?: string; onChange?: (v: string) => void; isSelect?: boolean; options?: string[] }) { return (<div className="flex flex-row items-center group py-1.5"><label className="text-[12px] text-slate-500 w-32 shrink-0">{label.includes('*') ? <>{label.replace(' *','')}<span className="text-red-600"> *</span></> : label}</label><div className="flex-1 relative border-b border-slate-200 group-hover:border-slate-400 focus-within:border-[#0072c6] flex items-center pb-1 transition-colors">{icon && <span className="material-symbols-outlined text-[18px] text-[#0072c6] mr-1">{icon}</span>}{isSelect ? <CustomSelect value={value} onChange={onChange||(()=>{})} options={options||[]} /> : <input type="text" value={value} onChange={e => onChange?.(e.target.value)} className="w-full bg-transparent text-[13px] outline-none text-slate-900" />}</div></div>); }

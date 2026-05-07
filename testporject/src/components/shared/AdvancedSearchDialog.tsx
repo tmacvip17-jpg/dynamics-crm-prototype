@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CustomSelect from './CustomSelect';
 
 export interface SearchField {
   id: string;
@@ -105,44 +106,50 @@ export default function AdvancedSearchDialog({
               </button>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3">
               {localFilters.map((f, i) => (
-                <div key={i} className="p-4 border border-slate-200 rounded-lg bg-slate-50/50 space-y-3 relative group">
+                <div key={i} className="flex flex-col gap-2 p-3 border border-slate-100 rounded bg-slate-50/30 hover:bg-slate-50 hover:border-slate-200 transition-all group relative">
                   <div className="flex items-center gap-2">
-                    <select 
-                      value={f.field} 
-                      onChange={e => updateRow(i, 'field', e.target.value)}
-                      className="flex-1 border border-slate-300 rounded px-3 py-1.5 text-[13px] bg-white outline-none focus:border-[#0072c6] transition-colors"
-                    >
-                      {fields.map(field => <option key={field.id} value={field.id}>{field.label}</option>)}
-                    </select>
+                    <div className="flex-1 bg-white rounded border border-slate-200 focus-within:border-[#0072c6] transition-colors">
+                      <CustomSelect 
+                        value={f.field} 
+                        onChange={v => updateRow(i, 'field', v)}
+                        options={fields.map(field => field.id)}
+                        displayValue={fields.find(field => field.id === f.field)?.label || f.field}
+                      />
+                    </div>
                     <button 
                       onClick={() => removeRow(i)}
-                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                      className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-all"
+                      title="Remove condition"
                     >
-                      <span className="material-symbols-outlined text-[20px]">delete</span>
+                      <span className="material-symbols-outlined text-[18px]">close</span>
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select 
-                      value={f.operator} 
-                      onChange={e => updateRow(i, 'operator', e.target.value)}
-                      className="w-40 border border-slate-300 rounded px-3 py-1.5 text-[13px] bg-white outline-none focus:border-[#0072c6] transition-colors"
-                    >
-                      {operators.map(op => <option key={op.id} value={op.id}>{op.label}</option>)}
-                    </select>
-                    <input 
-                      type="text" 
-                      value={f.value} 
-                      onChange={e => updateRow(i, 'value', e.target.value)}
-                      placeholder="Value..."
-                      className="flex-1 border border-slate-300 rounded px-3 py-1.5 text-[13px] bg-white outline-none focus:border-[#0072c6] transition-colors"
-                    />
+                    <div className="w-40 bg-white rounded border border-slate-200 focus-within:border-[#0072c6] transition-colors">
+                      <CustomSelect 
+                        value={f.operator} 
+                        onChange={v => updateRow(i, 'operator', v)}
+                        options={operators.map(op => op.id)}
+                        displayValue={operators.find(op => op.id === f.operator)?.label || f.operator}
+                      />
+                    </div>
+                    <div className="flex-1 bg-white rounded border border-slate-200 focus-within:border-[#0072c6] transition-colors flex items-center px-2">
+                      <input 
+                        type="text" 
+                        value={f.value} 
+                        onChange={e => updateRow(i, 'value', e.target.value)}
+                        placeholder="Type a value..."
+                        className="w-full bg-transparent py-1.5 text-[13px] text-slate-900 outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
               {localFilters.length === 0 && (
-                <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-lg">
+                <div className="text-center py-12 border-2 border-dashed border-slate-100 rounded bg-slate-50/20">
+                  <span className="material-symbols-outlined text-slate-200 text-[48px] mb-2">filter_list_off</span>
                   <p className="text-slate-400 text-[13px]">No conditions added. Showing all records.</p>
                 </div>
               )}

@@ -208,11 +208,66 @@ export interface ProjectVehicleModel {
 
 export type ProjectVehicleModelInput = Partial<Omit<ProjectVehicleModel, 'id' | 'created_at' | 'updated_at'>>;
 
+export interface TeamMember {
+  name: string;
+  role: string;
+  responsibility: string;
+}
+
+export interface PhaseTask {
+  id?: string;       // unique row identifier (UUID)
+  task: string;
+  owner: string;
+  start_date: string;
+  due_date: string;
+  status: string; // Not Started, In Progress, Completed, Delayed
+  coordinating_resources?: string;
+  description?: string;
+  item_description?: string;
+  priority?: string; // High, Medium, Low
+  reference_url?: string;
+}
+
+export interface ProjectPlan {
+  id: string;
+  name: string;
+  status: string; // Draft, Active, On Hold, Completed
+  current_phase: string | null; // M0, M1, M2, M3, M4
+  team_members: TeamMember[] | null;
+
+  m0_start: string | null;
+  m0_end: string | null;
+  m0_tasks: PhaseTask[] | null;
+
+  m1_start: string | null;
+  m1_end: string | null;
+  m1_tasks: PhaseTask[] | null;
+
+  m2_start: string | null;
+  m2_end: string | null;
+  m2_tasks: PhaseTask[] | null;
+
+  m3_start: string | null;
+  m3_end: string | null;
+  m3_tasks: PhaseTask[] | null;
+
+  m4_start: string | null;
+  m4_end: string | null;
+  m4_tasks: PhaseTask[] | null;
+
+  owner: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ProjectPlanInput = Partial<Omit<ProjectPlan, 'id' | 'created_at' | 'updated_at'>>;
+
 // Dashboard aggregation types
 export interface DashboardData {
   pipelineData: { name: string; amount: number }[];
   revenueData: { month: string; revenue: number }[];
   winLossData: { name: string; value: number }[];
+  projectTasksData?: { name: string; 'Not Started': number; 'In Progress': number; 'Completed': number; 'Delayed': number }[];
   totalAccounts: number;
   totalContacts: number;
   totalOpportunities: number;

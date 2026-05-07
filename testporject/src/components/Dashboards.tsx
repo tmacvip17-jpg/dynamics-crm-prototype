@@ -11,7 +11,7 @@ export default function Dashboards({ onNavigate }: { onNavigate?: (view: string)
     const [alertMessage, setAlertMessage] = useState('');
     const [alertTitle, setAlertTitle] = useState('Information');
     const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<DashboardData>({ pipelineData: [], revenueData: [], winLossData: [], totalAccounts: 0, totalContacts: 0, totalOpportunities: 0, totalLeads: 0 });
+    const [data, setData] = useState<DashboardData>({ pipelineData: [], revenueData: [], winLossData: [], projectTasksData: [], totalAccounts: 0, totalContacts: 0, totalOpportunities: 0, totalLeads: 0 });
 
     const fetchData = async () => { try { setLoading(true); setData(await dashboardApi.getData()); } catch (e: any) { setAlertTitle('Error'); setAlertMessage(e.message); setShowAlertDialog(true); } finally { setLoading(false); } };
     useEffect(() => { fetchData(); }, []);
@@ -47,6 +47,26 @@ export default function Dashboards({ onNavigate }: { onNavigate?: (view: string)
                         <h2 className="text-[13px] font-semibold text-slate-900 border-b border-slate-100 pb-2 mb-4">Win/Loss Ratio</h2>
                         <div className="flex-1 flex justify-center items-center"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={data.winLossData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value">{data.winLossData.map((_, i) => (<Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />))}</Pie><RechartsTooltip /><Legend verticalAlign="bottom" height={36} /></PieChart></ResponsiveContainer></div>
                     </div>
+                    {data.projectTasksData && data.projectTasksData.length > 0 && (
+                    <div className="bg-white rounded border border-slate-200 shadow-sm p-4 h-80 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+                        <h2 className="text-[13px] font-semibold text-slate-900 border-b border-slate-100 pb-2 mb-4">Project Tasks by Owner (任务按负责人统计)</h2>
+                        <div className="flex-1">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data.projectTasksData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis />
+                                    <RechartsTooltip />
+                                    <Legend />
+                                    <Bar dataKey="Not Started" stackId="a" fill="#cbd5e1" name="Not Started (未开始)" />
+                                    <Bar dataKey="In Progress" stackId="a" fill="#0072c6" name="In Progress (已开始)" />
+                                    <Bar dataKey="Delayed" stackId="a" fill="#ef4444" name="Delayed (预期/延期)" />
+                                    <Bar dataKey="Completed" stackId="a" fill="#10b981" name="Completed (已完成)" />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                    )}
                 </div>
                 )}
             </div>
