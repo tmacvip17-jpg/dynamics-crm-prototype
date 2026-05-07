@@ -39,8 +39,7 @@ export default function AuthView({ onAuthSuccess }: AuthViewProps) {
           email,
           password,
           options: {
-            data: { full_name: fullName },
-            emailRedirectTo: import.meta.env.VITE_APP_URL || window.location.origin,
+            data: { full_name: fullName }
           }
         });
         if (error) throw error;
